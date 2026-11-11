@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EAA Applicability Checker</title>
+<style>
+  html { line-height: 1.5; }
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; color: #1a1a1a; background: #ffffff; }
+  .container { max-width: 760px; margin: 0 auto; padding: 24px 16px 40px; }
+  header { border-bottom: 1px solid #d9d9d9; padding-bottom: 16px; margin-bottom: 24px; }
+  header h1 { font-size: 22px; margin: 0 0 6px; font-weight: 600; }
+  header p { margin: 0; font-size: 14px; color: #4d4d4d; }
+  .strip { background: #f4f4f4; border-left: 4px solid #c9c9c9; padding: 12px 16px; margin-bottom: 28px; font-size: 14px; color: #333333; }
+  .strip strong { color: #111111; }
+  h2 { font-size: 16px; margin: 28px 0 12px; font-weight: 600; color: #111111; }
+  fieldset { border: 1px solid #d9d9d9; border-radius: 6px; padding: 16px 16px 12px; margin: 0 0 20px; background: #ffffff; }
+  fieldset legend { font-size: 14px; font-weight: 600; color: #1a1a1a; padding: 0 8px; }
+  .qtext { font-size: 14px; margin: 0 0 10px; color: #222222; }
+  .options { display: flex; flex-direction: column; gap: 7px; }
+  .option { font-size: 14px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .option input { margin: 0; width: 16px; height: 16px; accent-color: #1a1a1a; }
+  .opt-label { color: #333333; }
+  .opt-note { font-size: 12px; color: #666666; margin-top: 2px; margin-left: 24px; }
+  button.see-result { background: #1a1a1a; color: #ffffff; border: none; border-radius: 6px; padding: 10px 20px; font-size: 15px; font-weight: 600; cursor: pointer; display: block; margin: 4px 0 0; }
+  button.see-result:hover { background: #4d4d4d; }
+  button.see-result:disabled { opacity: 0.6; cursor: not-allowed; }
+  .result-panel { border: 1px solid #d9d9d9; border-radius: 8px; padding: 20px; margin-top: 26px; display: none; background: #ffffff; }
+  .verdict-badge { display: inline-block; font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 999px; margin-bottom: 10px; }
+  .verdict-applies { background: #fdecea; color: #9a1c1c; border: 1px solid #f5c6c2; }
+  .verdict-likely { background: #fdf3e2; color: #8a5a00; border: 1px solid #f2d8ad; }
+  .verdict-exempt { background: #e8f3ec; color: #1e6b3d; border: 1px solid #c9e3d1; }
+  .verdict-out { background: #eef1f5; color: #4d4d4d; border: 1px solid #d8dde4; }
+  h2.verdict-headline { font-size: 19px; margin: 4px 0 8px; }
+  .result-meaning { font-size: 14px; color: #333333; margin: 0 0 14px; }
+  h3.reasons-title { font-size: 15px; margin: 0 0 8px; font-weight: 600; color: #1a1a1a; }
+  ul.reasons, ul.nextsteps { margin: 0 0 14px; padding-left: 20px; color: #333333; font-size: 14px; }
+  ul.reasons li, ul.nextsteps li { margin-bottom: 6px; }
+  .short-disclaimer { font-size: 12px; color: #666666; margin: 14px 0 0; border-top: 1px solid #e6e6e6; padding-top: 8px; }
+  .paid-callout { border: 1px solid #d9d9d9; border-left: 4px solid #1a1a1a; background: #f9f9f9; border-radius: 6px; padding: 16px; margin-top: 16px; display: none; }
+  .paid-callout .paid-tag { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #1a1a1a; margin-bottom: 6px; }
+  .paid-callout p { font-size: 13px; color: #333333; margin: 0 0 10px; }
+  .paid-callout a.paid-cta { color: #1a1a1a; text-decoration: underline; font-weight: 600; }
+  footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #d9d9d9; font-size: 12px; color: #666666; }
+  footer p { margin: 0 0 6px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) { .container { padding: 16px 12px 32px; } .options { gap: 6px; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>EAA Applicability Checker</h1>
+    <p>A free two-minute check of whether the European Accessibility Act (Directive (EU) 2019/882) likely applies to your business.</p>
+  </header>
+
+  <div class="strip">
+    <p><strong>How this works.</strong> You answer six questions about your markets, your customers, and what you sell. The checker compares your answers against the scope lists in the European Accessibility Act and gives a plain-language result with next steps.</p>
+    <p><strong>What this is not.</strong> This is general guidance based on the text of Directive (EU) 2019/882. It is not legal advice. The Act applies through national transposition laws, which differ between EU countries, and market-surveillance authorities make the final call.</p>
+  </div>
+
+  <h2>Questionnaire</h2>
+  <form id="eaa-form" novalidate>
+    <fieldset>
+      <legend>Q1 &mdash; EU market</legend>
+      <p class="qtext">Do you sell or offer your products or services to customers in any EU country?</p>
+      <div class="options">
+        <label class="option"><input type="radio" name="euMarket" value="yes" required><span class="opt-label">Yes</span></label>
+        <label class="option"><input type="radio" name="euMarket" value="no"><span class="opt-label">No</span></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Q2 &mdash; Who you sell to</legend>
+      <p class="qtext">Who are they sold to?</p>
+      <div class="options">
+        <label class="option"><input type="radio" name="audience" value="b2c"><span class="opt-label">Consumers only</span></label>
+        <label class="option"><input type="radio" name="audience" value="both"><span class="opt-label">Consumers and businesses</span></label>
+        <label class="option"><input type="radio" name="audience" value="b2b"><span class="opt-label">Businesses only</span></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Q3 &mdash; What you sell</legend>
+      <p class="qtext">What do you sell? Tick everything that applies.</p>
+      <div class="options">
+        <label class="option"><input type="checkbox" name="offerings" value="svc-ecommerce"><span class="opt-label">Online shop / e-commerce service</span></label>
+        <label class="option"><input type="checkbox" name="offerings" value="svc-banking"><span class="opt-label">Consumer banking or payment accounts for consumers</span></label>
+        <label class="option"><input type="checkbox" name="offerings" value="svc-ebooks"><span class="opt-label">E-books or dedicated e-book software</span></label>
+        <label class="option"><input type="checkbox" name="offerings" value="svc-transport"><span class="opt-label">Passenger transport: booking site/app, e-tickets, travel information</span></label>
+        <label class="option"><input type="checkbox" name="offerings" value="svc-telecom"><span class="opt-label">Electronic communications service</span></label>
+        <label class="option"><input type="checkbox" name="offerings" value="svc-avmedia"><span class="opt-label">Service giving access to audiovisual media</span></label>
+        <label class="option"><input type="checkbox" name="offerings" value="svc-other"><span class="opt-label">Another service not in this list</span></label>
+        <label class="option"><input type="checkbox" name="offerings" value="prod-computers"><span class="opt-label">Consumer computer hardware or operating systems</span></label>
+        <label class="option"><input type="checkbox" name="offerings" value="prod-terminals"><span class="opt-label">Self-service terminals: payment, ATM, ticketing, check-in</span></label>
+        <label class="option"><input type="checkbox" name="offerings" value="prod-terminal-equipment"><span class="opt-label">Consumer terminal equipment with interactive computing, e.g. for communications or media access</span></label>
+        <label class="option"><input type="checkbox" name="offerings" value="prod-ereader"><span class="opt-label">E-readers</span></label>
+        <label class="option"><input type="checkbox" name="offerings" value="prod-other"><span class="opt-label">Another product not in this list</span></label>
+        <label class="option"><input type="checkbox" name="offerings" value="unsure"><span class="opt-label">I am not sure which category fits</span></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Q4 &mdash; Headcount</legend>
+      <p class="qtext">How many people does your business employ?</p>
+      <div class="options">
+        <label class="option"><input type="radio" name="headcount" value="lt10"><span class="opt-label">Fewer than 10</span></label>
+        <label class="option"><input type="radio" name="headcount" value="10to49"><span class="opt-label">10 to 49</span></label>
+        <label class="option"><input type="radio" name="headcount" value="50to249"><span class="opt-label">50 to 249</span></label>
+        <label class="option"><input type="radio" name="headcount" value="250plus"><span class="opt-label">250 or more</span></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Q5 &mdash; Annual turnover or balance sheet total</legend>
+      <p class="qtext">What is your annual turnover or balance sheet total?</p>
+      <div class="options">
+        <label class="option"><input type="radio" name="finance" value="le2m"><span class="opt-label">EUR 2 million or less (turnover or balance sheet total)</span></label>
+        <label class="option"><input type="radio" name="finance" value="gt2m"><span class="opt-label">Both are above EUR 2 million</span></label>
+        <label class="option"><input type="radio" name="finance" value="unsure"><span class="opt-label">Unsure</span></label>
+      </div>
+      <p class="opt-note">Under Article 3(23), a microenterprise employs fewer than 10 people and has annual turnover not exceeding EUR 2 million OR an annual balance sheet total not exceeding EUR 2 million.</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Q6 &mdash; Accessibility today</legend>
+      <p class="qtext">Where are you today on accessibility?</p>
+      <div class="options">
+        <label class="option"><input type="radio" name="conformance" value="none"><span class="opt-label">Not started</span></label>
+        <label class="option"><input type="radio" name="conformance" value="partial"><span class="opt-label">Some work done</span></label>
+        <label class="option"><input type="radio" name="conformance" value="assessed"><span class="opt-label">Audited / documented as conformant</span></label>
+      </div>
+      <p class="opt-note">This affects your next steps only, never the verdict.</p>
+    </fieldset>
+
+    <button type="submit" class="see-result" id="see-result">See my result</button>
+  </form>
+
+  <div class="result-panel" id="result-panel">
+    <h2 class="verdict-headline" id="verdict-headline"></h2>
+    <p class="result-meaning" id="verdict-meaning"></p>
+    <h3 class="reasons-title">Why this result</h3>
+    <ul class="reasons" id="reasons-list"></ul>
+    <h3 class="reasons-title">Next steps</h3>
+    <ul class="nextsteps" id="nextsteps-list"></ul>
+    <div class="paid-callout" id="paid-callout">
+      <div class="paid-tag">Paid module</div>
+      <p>EAA Compliance Module 1 — a checklist and accessibility conformance report (ACR) template pack for teams working through compliance.</p>
+      <a class="paid-cta" href="#PAID_MODULE_LINK">Open the paid module</a>
+    </div>
+    <p class="short-disclaimer">This checker is general guidance based on the text of Directive (EU) 2019/882. It is not legal advice. The Act applies through national transposition laws, which differ between EU countries, and market-surveillance authorities make the final call. For a decision you will rely on, confirm with a qualified adviser in the relevant country.</p>
+  </div>
+
+  <footer>
+    <p>This checker is general guidance based on the text of Directive (EU) 2019/882 (the European Accessibility Act). It is not legal advice. The Act applies through national transposition laws, which differ between EU countries, and market-surveillance authorities make the final call. For a decision you will rely on, confirm with a qualified adviser in the relevant country.</p>
+    <p>Scope follows Article 2 of the Directive. The microenterprise test follows Articles 3(23) and 4(5); the microenterprise exemption covers services only.</p>
+  </footer>
+
+  <script>
+    (function () {
+      var form = document.getElementById('eaa-form');
+      var panel = document.getElementById('result-panel');
+      var headline = document.getElementById('verdict-headline');
+      var meaning = document.getElementById('verdict-meaning');
+      var reasonsList = document.getElementById('reasons-list');
+      var nextstepsList = document.getElementById('nextsteps-list');
+      var paidCallout = document.getElementById('paid-callout');
+      var btn = document.getElementById('see-result');
+
+      function renderResult(result) {
+        var badgeClass = 'verdict-' + result.verdict;
+        headline.className = 'verdict-headline verdict-badge ' + badgeClass;
+        headline.textContent = verdictLabel(result.verdict);
+        meaning.textContent = verdictMeaning(result.verdict);
+
+        reasonsList.innerHTML = '';
+        result.reasons.forEach(function (r) {
+          var li = document.createElement('li');
+          li.textContent = r;
+          reasonsList.appendChild(li);
+        });
+
+        nextstepsList.innerHTML = '';
+        result.nextSteps.forEach(function (s) {
+          var li = document.createElement('li');
+          li.textContent = s;
+          nextstepsList.appendChild(li);
+        });
+
+        paidCallout.style.display = 'block';
+        panel.style.display = 'block';
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      function verdictLabel(v) {
+        if (v === 'applies') return 'Verdict: the EAA likely applies';
+        if (v === 'likely-applies') return 'Verdict: the EAA likely applies';
+        if (v === 'exempt-microenterprise') return 'Verdict: likely exempt as a microenterprise (services)';
+        if (v === 'out-of-scope') return 'Verdict: likely out of scope';
+        return 'Verdict: unclear';
+      }
+
+      function verdictMeaning(v) {
+        if (v === 'applies') return 'Based on your answers, the European Accessibility Act likely applies to your business. You should work through the compliance steps below.';
+        if (v === 'likely-applies') return 'Based on your answers, the EAA likely applies, but one answer needs confirming before a firm verdict.';
+        if (v === 'exempt-microenterprise') return 'Based on your answers, you appear to qualify for the Article 4(5) microenterprise exemption for covered services. Keep records of your size figures.';
+        if (v === 'out-of-scope') return 'Based on your answers, the EAA does not appear to apply to your business on these facts. Other laws may still apply.';
+        return '';
+      }
+
+      form.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        var euMarket = form.elements.namedItem('euMarket').value;
+        var audience = form.elements.namedItem('audience').value;
+        var headcount = form.elements.namedItem('headcount').value;
+        var finance = form.elements.namedItem('finance').value;
+        var conformance = form.elements.namedItem('conformance').value;
+
+        var offerings = [];
+        var checkboxes = form.elements.namedItem('offerings');
+        for (var i = 0; i < checkboxes.length; i++) {
+          if (checkboxes[i].checked) {
+            offerings.push(checkboxes[i].value);
+          }
+        }
+
+        var answers = {
+          euMarket: euMarket,
+          audience: audience,
+          offerings: offerings,
+          headcount: headcount,
+          finance: finance,
+          conformance: conformance
+        };
+
+        var result = evaluateEAA(answers);
+        renderResult(result);
+      });
+    })();
+  </script>
+
+  <script data-eaa-logic>
+    function evaluateEAA(answers) {
+      var coveredServiceKeys = ['svc-ecommerce', 'svc-banking', 'svc-ebooks', 'svc-transport', 'svc-telecom', 'svc-avmedia'];
+      var coveredProductKeys = ['prod-computers', 'prod-terminals', 'prod-terminal-equipment', 'prod-ereader'];
+
+      var serviceNames = {
+        'svc-ecommerce': 'an e-commerce service (online shop)',
+        'svc-banking': 'a consumer banking service',
+        'svc-ebooks': 'an e-books service or dedicated e-book software',
+        'svc-transport': 'a passenger transport service',
+        'svc-telecom': 'an electronic communications service',
+        'svc-avmedia': 'a service giving access to audiovisual media'
+      };
+
+      var productNames = {
+        'prod-computers': 'consumer computer hardware or operating systems',
+        'prod-terminals': 'self-service terminals (payment terminals, ATMs, ticketing or check-in machines)',
+        'prod-terminal-equipment': 'consumer terminal equipment with interactive computing capability, such as for communications or media access',
+        'prod-ereader': 'e-readers'
+      };
+
+      var offerings = answers.offerings || [];
+      var coveredServices = offerings.filter(function (key) { return coveredServiceKeys.indexOf(key) !== -1; });
+      var coveredProducts = offerings.filter(function (key) { return coveredProductKeys.indexOf(key) !== -1; });
+      var hasUncertain = offerings.indexOf('unsure') !== -1;
+
+      var isMicroConfirmed = answers.headcount === 'lt10' && answers.finance === 'le2m';
+      var isMicroPossible = answers.headcount === 'lt10' && answers.finance === 'unsure';
+
+      var reasons = [];
+      var nextSteps = [];
+      var verdict;
+
+      function listed(keys, names) {
+        return keys.map(function (key) { return names[key] || key; }).join(', ');
+      }
+
+      // Rule 1 — EU gate
+      if (answers.euMarket === 'no') {
+        verdict = 'out-of-scope';
+        reasons.push('You do not sell or offer products or services to customers in any EU country, so the European Accessibility Act does not reach your business on these answers.');
+        addOutOfScopeNextSteps(nextSteps);
+        return { verdict: verdict, reasons: reasons, nextSteps: nextSteps };
+      }
+
+      // Rule 3 — B2B branch (covered services are consumer services and do not count)
+      if (answers.audience === 'b2b') {
+        if (coveredProducts.length > 0) {
+          verdict = 'likely-applies';
+          reasons.push('You sell ' + listed(coveredProducts, productNames) + '; obligations attach to placing covered consumer products on the EU market even when your own sales channel is business-to-business.');
+        } else if (hasUncertain) {
+          verdict = 'likely-applies';
+          reasons.push('You answered that you are not sure which category your offerings fit, so the category needs to be pinned down against the Article 2 lists.');
+        } else {
+          verdict = 'out-of-scope';
+          reasons.push('You sell only to businesses and none of your selected offerings are covered products or covered services, so the Act does not appear to apply on these answers.');
+        }
+        addNextStepsByVerdict(verdict, coveredServices, coveredProducts, answers.conformance, nextSteps);
+        return { verdict: verdict, reasons: reasons, nextSteps: nextSteps };
+      }
+
+      // Rule 4 — nothing covered
+      if (coveredServices.length === 0 && coveredProducts.length === 0 && !hasUncertain) {
+        verdict = 'out-of-scope';
+        reasons.push('None of your selected offerings appear on the Article 2 lists of covered services or covered products.');
+        addOutOfScopeNextSteps(nextSteps);
+        return { verdict: verdict, reasons: reasons, nextSteps: nextSteps };
+      }
+
+      // Rule 5 — only unsure
+      if (coveredServices.length === 0 && coveredProducts.length === 0 && hasUncertain) {
+        verdict = 'likely-applies';
+        reasons.push('You answered that you are not sure which category your offerings fit, so the category needs to be pinned down against the Article 2 lists.');
+        addLikelyAppliesNextSteps(coveredServices, coveredProducts, answers.conformance, nextSteps);
+        return { verdict: verdict, reasons: reasons, nextSteps: nextSteps };
+      }
+
+      // Rule 7 — covered products present
+      if (coveredProducts.length > 0) {
+        verdict = 'applies';
+        reasons.push('You sell ' + listed(coveredProducts, productNames) + '; covered products carry accessibility obligations regardless of the services exemption.');
+        if (isMicroConfirmed) {
+          reasons.push('You employ fewer than 10 people and your annual turnover or balance sheet total is EUR 2 million or less, so you qualify as a microenterprise under Article 3(23). For covered products the only relief is Article 14(4): you need not document a disproportionate-burden assessment, but the duty to make the product accessible still stands.');
+        }
+        if (coveredServices.length > 0 && isMicroConfirmed) {
+          reasons.push('The services part of your offering would be exempt for a microenterprise under Article 4(5), but the product part is not exempt.');
+        }
+        addLikelyAppliesNextSteps(coveredServices, coveredProducts, answers.conformance, nextSteps);
+        return { verdict: verdict, reasons: reasons, nextSteps: nextSteps };
+      }
+
+      // Rule 8 — only covered services
+      if (isMicroConfirmed) {
+        verdict = 'exempt-microenterprise';
+        reasons.push('You sell ' + listed(coveredServices, serviceNames) + ' to consumers in the EU and you qualify as a microenterprise under Article 3(23) (fewer than 10 people and annual turnover or balance sheet total of EUR 2 million or less).');
+        reasons.push('Under Article 4(5), microenterprises providing services are exempt from the services accessibility requirements and the obligations relating to them.');
+        reasons.push('The exemption lapses if your business grows past either threshold: 10 people, or turnover / balance sheet total above EUR 2 million.');
+        addExemptNextSteps(nextSteps);
+        return { verdict: verdict, reasons: reasons, nextSteps: nextSteps };
+      }
+      if (isMicroPossible) {
+        verdict = 'likely-applies';
+        reasons.push('You sell ' + listed(coveredServices, serviceNames) + ' to consumers in the EU. You employ fewer than 10 people but your finance figures are not confirmed, so the microenterprise test under Article 3(23) cannot be confirmed yet.');
+        addLikelyAppliesNextSteps(coveredServices, coveredProducts, answers.conformance, nextSteps);
+        return { verdict: verdict, reasons: reasons, nextSteps: nextSteps };
+      }
+      verdict = 'applies';
+      reasons.push('You sell ' + listed(coveredServices, serviceNames) + ' to consumers in the EU, so covered consumer services are in scope.');
+      addLikelyAppliesNextSteps(coveredServices, coveredProducts, answers.conformance, nextSteps);
+      return { verdict: verdict, reasons: reasons, nextSteps: nextSteps };
+
+      // --- next step builders ---
+
+      function addOutOfScopeNextSteps(nextSteps) {
+        nextSteps.push('No action is required under this Act on these answers.');
+        nextSteps.push('Re-run the check if your offer, your audience, or the markets you sell into change.');
+        nextSteps.push('Other laws, such as national equality laws or sector rules, may still apply to your business.');
+      }
+
+      function addExemptNextSteps(nextSteps) {
+        nextSteps.push('Keep records showing your size figures (headcount and annual turnover or balance sheet total).');
+        nextSteps.push('Re-check the test when you hire more people or your turnover grows.');
+        nextSteps.push('Voluntary accessibility conformance can still help with enterprise customers and some national rules.');
+      }
+
+      function addLikelyAppliesNextSteps(coveredServices, coveredProducts, conformance, nextSteps) {
+        nextSteps.push('Inventory the covered products and services you sell.');
+        if (conformance === 'assessed') {
+          nextSteps.push('Keep your accessibility evidence and re-check it whenever your products or services change.');
+        } else {
+          nextSteps.push('Assess your covered items against EN 301 549 / WCAG 2.1 Level AA.');
+        }
+        if (coveredServices.length > 0 && coveredProducts.length === 0) {
+          nextSteps.push('Prepare an accessibility statement for your services.');
+        } else if (coveredProducts.length > 0 && coveredServices.length === 0) {
+          nextSteps.push('Prepare technical documentation and CE marking for your covered products.');
+        } else if (coveredServices.length > 0 && coveredProducts.length > 0) {
+          nextSteps.push('Prepare an accessibility statement for your services, and technical documentation and CE marking for your covered products.');
+        }
+        nextSteps.push('If you claim disproportionate burden, document the Annex VI assessment and keep it.');
+        nextSteps.push('Check the national transposition of the Act in each EU market you sell into.');
+        nextSteps.push('The paid EAA Compliance Module 1 offers a checklist and an accessibility conformance report (ACR) template pack to help teams work through compliance.');
+      }
+
+      function addNextStepsByVerdict(verdict, coveredServices, coveredProducts, conformance, nextSteps) {
+        if (verdict === 'likely-applies') {
+          addLikelyAppliesNextSteps(coveredServices, coveredProducts, conformance, nextSteps);
+        } else {
+          addOutOfScopeNextSteps(nextSteps);
+        }
+      }
+    }
+  </script>
+</body>
+</html>
